@@ -13,24 +13,23 @@ const isAcceptable = (ns: number[]) => {
 		jumps = jumps.map((x) => -x);
 	}
 
-	const idx = [];
+	const badIdx = [];
 	for (let i = 0; i < jumps.length; i++) {
 		if (!isOK(jumps[i])) {
-			idx.push(i);
+			badIdx.push(i);
 		}
 	}
 
 	// all is good already
-	if (idx.length === 0) return true;
-
+	if (badIdx.length === 0) return true;
 	// too many wrong jumps
-	if (idx.length > 2) return false;
+	if (badIdx.length > 2) return false;
 	// two non-adjacent wrong jumps, cannot fix both of them
-	if (idx.length === 2 && idx[1] > idx[0] + 1) return false;
+	if (badIdx.length === 2 && badIdx[1] > badIdx[0] + 1) return false;
 	// exactly two adjacent wrong jumps, the only potential fix is collapsing them
-	if (idx.length === 2) return isOK(jumps[idx[0]] + jumps[idx[1]]);
-	// biome-ignore lint/style/noNonNullAssertion: <explanation>
-	const i = idx[0]!;
+	if (badIdx.length === 2) return isOK(jumps[badIdx[0]] + jumps[badIdx[1]]);
+	// biome-ignore lint/style/noNonNullAssertion: Exactly one number there
+	const i = badIdx[0]!;
 	// exactly one jump
 	return (
 		// can drop the first number
