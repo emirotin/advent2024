@@ -1,4 +1,4 @@
-import { readLines, parseNumbers } from "./util.js";
+import { readLines, parseNumbers } from "../util.js";
 
 const data = readLines("./input.txt").map(parseNumbers);
 
@@ -10,8 +10,10 @@ const isSafe = (ns: number[]) => {
 		return false;
 	}
 
-	const isSafeStep = a < b ? isBetween(1, 3) : isBetween(-3, -1);
-	return ns.every((x, i) => i === 0 || isSafeStep(x - ns[i - 1]));
+	// biome-ignore lint/style/noNonNullAssertion: <explanation>
+	const isSafeStep = a! < b! ? isBetween(1, 3) : isBetween(-3, -1);
+	// biome-ignore lint/style/noNonNullAssertion: <explanation>
+	return ns.every((x, i) => i === 0 || isSafeStep(x - ns[i - 1]!));
 };
 
 console.log(data.filter(isSafe).length);

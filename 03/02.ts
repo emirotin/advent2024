@@ -1,4 +1,4 @@
-import { readLines } from "./util";
+import { readLines } from "../util.js";
 
 const input = readLines("input.txt").join(" ");
 
