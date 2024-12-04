@@ -1,6 +1,6 @@
 import { readLines, compNumbers } from "../util.js";
 
-const data = readLines("./input.txt");
+const data = readLines("./01/input.txt");
 const pairs = data.map((s) => s.split(/\s+/).map((s) => Number.parseInt(s)));
 
 const first = pairs.map(([x]) => x as number).sort(compNumbers);
