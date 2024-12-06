@@ -52,7 +52,7 @@ const checkWithObstacle = (r: number, j: number) => {
 	const grid = gridTemplate.map((row) =>
 		row.map((char) => ({ char, dirs: [] as string[] }))
 	);
-	grid[initialPos.r]![initialPos.c] = { char: "", dirs: ["u"] };
+	grid[initialPos.r]![initialPos.c] = { char: ".", dirs: ["u"] };
 	grid[r]![j]!.char = "#";
 
 	let pos = initialPos;
