@@ -32,6 +32,7 @@ const isProhibited = (from: string, to: string) =>
 	graph.get(to)?.includes(from);
 
 let res = 0;
+const incorrect = [] as string[][];
 for (const update of updates) {
 	const l = update.length;
 	let failed = false;
@@ -48,8 +49,20 @@ for (const update of updates) {
 	}
 
 	if (!failed) {
-		res += Number.parseInt(update[(update.length - 1) / 2]!);
+		continue;
 	}
+
+	update.sort((a, b) => {
+		if (graph.get(a)?.includes(b)) {
+			return -1;
+		}
+		if (graph.get(b)?.includes(a)) {
+			return 1;
+		}
+		return 0;
+	});
+
+	res += Number.parseInt(update[(update.length - 1) / 2]!);
 }
 
 console.log(res);
