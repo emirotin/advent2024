@@ -4,6 +4,9 @@ const grid = readLines("./06/input.txt")
 	.filter(Boolean)
 	.map((s) => s.split(""));
 
+const rows = grid.length;
+const cols = grid[0]!.length;
+
 type Point = { r: number; c: number };
 type Dir = "u" | "r" | "d" | "l";
 
@@ -35,9 +38,6 @@ const nextPos = ({ r, c }: Point, d: Dir): Point => {
 
 let pos!: Point;
 let dir: Dir = "u";
-
-const rows = grid.length;
-const cols = grid[0]!.length;
 
 const isOff = ({ r, c }: Point) => r < 0 || r >= rows || c < 0 || c >= cols;
 
