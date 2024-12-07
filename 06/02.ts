@@ -48,12 +48,42 @@ for (let r = 0; r < rows; r++) {
 	}
 }
 
-const checkWithObstacle = (r: number, j: number) => {
+const findVisited = () => {
+	const grid = gridTemplate.map((row) => [...row]);
+
+	let pos = initialPos;
+	let dir: Dir = "u";
+
+	while (true) {
+		grid[pos.r]![pos.c] = "X";
+		const next = nextPos(pos, dir);
+		if (isOff(next)) {
+			break;
+		}
+		if (grid[next.r]![next.c] === "#") {
+			dir = nextDir(dir);
+		} else {
+			pos = next;
+		}
+	}
+
+	const res: Point[] = [];
+	for (let r = 0; r < rows; r++) {
+		for (let c = 0; c < cols; c++) {
+			if (grid[r]![c] === "X") {
+				res.push({ r, c });
+			}
+		}
+	}
+	return res;
+};
+
+const checkWithObstacle = ({ r, c }: Point) => {
 	const grid = gridTemplate.map((row) =>
 		row.map((char) => ({ char, dirs: [] as string[] }))
 	);
 	grid[initialPos.r]![initialPos.c] = { char: ".", dirs: ["u"] };
-	grid[r]![j]!.char = "#";
+	grid[r]![c]!.char = "#";
 
 	let pos = initialPos;
 	let dir: Dir = "u";
@@ -76,13 +106,11 @@ const checkWithObstacle = (r: number, j: number) => {
 };
 
 let res = 0;
-for (let r = 0; r < rows; r++) {
-	for (let c = 0; c < cols; c++) {
-		if (r === initialPos.r && c === initialPos.c) {
-			continue;
-		}
-		res += Number(checkWithObstacle(r, c));
+for (const { r, c } of findVisited()) {
+	if (r === initialPos.r && c === initialPos.c) {
+		continue;
 	}
+	res += Number(checkWithObstacle({ r, c }));
 }
 
 console.log(res);
