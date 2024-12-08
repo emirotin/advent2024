@@ -21,3 +21,19 @@ export const parseNumbers = (s: string) =>
 		.map((s) => Number.parseInt(s));
 
 export const uniq = <T>(a: T[]) => [...new Set(a)];
+
+export const gcd = (a: number, b: number) => {
+	let x = Math.abs(a);
+	let y = Math.abs(b);
+	while (true) {
+		if (x < y) {
+			const t = x;
+			x = y;
+			y = t;
+		}
+		if (y === 0) {
+			return x;
+		}
+		x -= y;
+	}
+};
