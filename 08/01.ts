@@ -18,12 +18,12 @@ const getAntinodes = (p1: Point, p2: Point) => {
 	const vec = [p2.r - p1.r, p2.c - p1.c] as const;
 
 	const a1: Point = {
-		r: Math.round(p1.r - vec[0]),
-		c: Math.round(p1.c - vec[1]),
+		r: p1.r - vec[0],
+		c: p1.c - vec[1],
 	};
 	const a2: Point = {
-		r: Math.round(p2.r + vec[0]),
-		c: Math.round(p2.c + vec[1]),
+		r: p2.r + vec[0],
+		c: p2.c + vec[1],
 	};
 
 	return [a1, a2];
