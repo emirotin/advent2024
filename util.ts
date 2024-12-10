@@ -14,10 +14,10 @@ export const readLines = (fileName: string) => {
 
 export const compNumbers = (a: number, b: number) => a - b;
 
-export const parseNumbers = (s: string) =>
+export const parseNumbers = (s: string, sep: string | RegExp = /\s+/) =>
 	s
 		.trim()
-		.split(/\s+/)
+		.split(sep)
 		.map((s) => Number.parseInt(s));
 
 export const uniq = <T>(a: T[]) => [...new Set(a)];
