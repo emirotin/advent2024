@@ -19,5 +19,8 @@
   "volta": {
     "node": "22.11.0",
     "pnpm": "9.14.4"
+  },
+  "dependencies": {
+    "lodash": "^4.17.21"
   }
 }
