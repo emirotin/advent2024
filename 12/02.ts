@@ -25,7 +25,7 @@ const neighbors = ({ r, c }: { r: number; c: number }) =>
 		.filter((x) => x !== undefined)
 		.map(([r, c]) => coord({ r, c }));
 
-const hasAngles = ({ r, c }: { r: number; c: number }) => {
+const countAngles = ({ r, c }: { r: number; c: number }) => {
 	const v = allCells.get(coord({ r, c }));
 	const ns = {
 		nw: allCells.get(coord({ r: r - 1, c: c - 1 })),
@@ -91,7 +91,7 @@ while (remainingCells.size > 0) {
 
 	for (const k of visited.values()) {
 		const [r, c] = parseNumbers(k, ":") as [number, number];
-		sides += hasAngles({ r, c });
+		sides += countAngles({ r, c });
 	}
 
 	res += area * sides;
