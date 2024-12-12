@@ -25,8 +25,6 @@ const neighbors = ({ r, c }: { r: number; c: number }) =>
 		.filter((x) => x !== undefined)
 		.map(([r, c]) => coord({ r, c }));
 
-let res = 0;
-
 const hasAngles = ({ r, c }: { r: number; c: number }) => {
 	const v = allCells.get(coord({ r, c }));
 	const ns = {
@@ -52,6 +50,7 @@ const hasAngles = ({ r, c }: { r: number; c: number }) => {
 	);
 };
 
+let res = 0;
 let i = 0;
 while (remainingCells.size > 0) {
 	i++;
