@@ -1,6 +1,6 @@
 import { readLines, parseNumbers } from "../util.js";
 
-const data = readLines("./02/input.txt").map(parseNumbers);
+const data = readLines("./02/input.txt").map((s) => parseNumbers(s));
 
 const isBetween = (a: number, b: number) => (x: number) => x >= a && x <= b;
 const isOK = isBetween(1, 3);
