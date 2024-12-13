@@ -9,9 +9,8 @@
 			"request": "launch",
 			"name": "Launch Program",
 			"skipFiles": ["<node_internals>/**"],
-			"program": "${workspaceFolder}/09/02.ts",
-			"preLaunchTask": "tsc: build - tsconfig.json",
-			"outFiles": ["${workspaceFolder}/**/*.js"]
+			"runtimeArgs": ["-r", "ts-node/register", "--loader", "ts-node/esm"],
+			"args": ["${workspaceFolder}/13/01.ts"]
 		}
 	]
 }
