@@ -10,7 +10,7 @@
 			"name": "Launch Program",
 			"skipFiles": ["<node_internals>/**"],
 			"runtimeArgs": ["-r", "ts-node/register", "--loader", "ts-node/esm"],
-			"args": ["${workspaceFolder}/13/01.ts"]
+			"args": ["${workspaceFolder}/13/02.ts"]
 		}
 	]
 }
