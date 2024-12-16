@@ -1,4 +1,4 @@
-import { readLines } from "../util";
+import { readLines, uniq } from "../util";
 
 const origGrid = readLines("./16/input.txt").map((s) => s.split(""));
 const rows = origGrid.length;
@@ -36,7 +36,9 @@ if (startPos === null || endPos === null) {
 
 type Dir = "n" | "s" | "w" | "e";
 
-type CellStats = Partial<Record<Dir, number>>;
+type CellStats = Partial<
+	Record<Dir, { l: number; from: Array<{ p: Coord; d: Dir }> }>
+>;
 
 const grid = origGrid.map((r) =>
 	r.map((s) => (s === "#" ? "#" : ({} as CellStats)))
@@ -48,7 +50,7 @@ const set = ({ r, c }: Coord, v: CellStats) => {
 };
 const isWall = (pos: Coord) => at(pos) === "#";
 
-set(startPos, { e: 0 });
+set(startPos, { e: { l: 0, from: [] } });
 const nextCells: Array<{ p: Coord; d: Dir }> = [
 	{
 		p: startPos,
@@ -58,7 +60,7 @@ const nextCells: Array<{ p: Coord; d: Dir }> = [
 
 const getNeighbors = (p: Coord, d: Dir) => {
 	const ns: Array<{ p: Coord; inc: number; d: Dir }> = [];
-	const prev = (at(p) as CellStats)[d]!;
+	const prev = (at(p) as CellStats)[d]!.l;
 
 	switch (d) {
 		case "n":
@@ -105,14 +107,35 @@ while (nextCells.length) {
 
 	for (const n of ns) {
 		const nStats = at(n.p) as CellStats;
-		if (nStats[n.d] === undefined || nStats[n.d]! > n.inc + n.prev) {
-			nStats[n.d] = n.inc + n.prev;
+		if (!nStats[n.d] || nStats[n.d]!.l > n.inc + n.prev) {
+			nStats[n.d] = { l: n.inc + n.prev, from: [curr] };
 			nextCells.push({
 				p: n.p,
 				d: n.d,
 			});
+		} else if (nStats[n.d]!.l === n.inc + n.prev) {
+			nStats[n.d]!.from.push(curr);
 		}
 	}
 }
 
-console.log(Math.min(...Object.values(at(endPos) as CellStats)));
+const endStats = Object.keys(at(endPos) as CellStats).map((ds) => {
+	const d = ds as Dir;
+	return {
+		d,
+		...(at(endPos) as CellStats)[d]!,
+	};
+});
+const minPath = Math.min(...endStats.map(({ l }) => l));
+const optimalDir = endStats.find(({ l }) => l === minPath)!.d;
+
+const backTrackNext = [{ p: endPos, d: optimalDir }];
+const backTrack: Coord[] = [];
+while (backTrackNext.length) {
+	const o = backTrackNext.shift()!;
+	backTrack.push(o.p);
+	const stats = (at(o.p) as CellStats)[o.d]!;
+	backTrackNext.push(...stats.from);
+}
+
+console.log(uniq(backTrack.map(({ r, c }) => `${r}:${c}`)).length);
