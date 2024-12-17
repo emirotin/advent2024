@@ -58,18 +58,15 @@ while (true) {
 	const opcode = read();
 	switch (opcode) {
 		case 0: {
-			const d = 2 ** read(true);
-			regs.A = ~~(regs.A! / d);
+			regs.A = regs.A! >> read(true);
 			break;
 		}
 		case 6: {
-			const d = 2 ** read(true);
-			regs.B = ~~(regs.A! / d);
+			regs.B = regs.A! >> read(true);
 			break;
 		}
 		case 7: {
-			const d = 2 ** read(true);
-			regs.C = ~~(regs.A! / d);
+			regs.C = regs.A! >> read(true);
 			break;
 		}
 		case 1: {
