@@ -73,6 +73,4 @@ while (lo < hi - 1) {
 	}
 }
 
-const i = getPath(lo) ? lo : hi;
-
-console.log(input[i]?.join(","));
+console.log(input[lo]?.join(","));
