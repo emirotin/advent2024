@@ -138,7 +138,6 @@ for (const [p, n1, n2] of cheats) {
 	const grid = getGrid(baseGrid);
 
 	set(grid, n1, 1 + (at(grid, p) as number));
-
 	set(grid, n2, 2 + (at(grid, p) as number));
 
 	const { len } = findPath(grid, n2);
