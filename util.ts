@@ -22,6 +22,14 @@ export const parseNumbers = (s: string, sep: string | RegExp = /\s+/) =>
 
 export const uniq = <T>(a: T[]) => [...new Set(a)];
 
+export const uniqBy = <T, U>(a: T[], id: (x: T) => U) => {
+	const map = new Map<U, T>();
+	for (const x of a) {
+		map.set(id(x), x);
+	}
+	return Array.from(map.values());
+};
+
 export const gcd = (a: number, b: number) => {
 	let x = Math.abs(a);
 	let y = Math.abs(b);
