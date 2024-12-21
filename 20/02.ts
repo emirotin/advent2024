@@ -148,10 +148,10 @@ const counts = new Map<number, number>();
 for (let i = 0; i < canonicPath.length - 1; i++) {
 	const entry = canonicPath[i]!;
 	for (const [exit, d] of findShortcuts(entry, 20)) {
-		const j = canonicPath.findIndex((p) => eq(p, exit));
-		if (j <= i) {
-			continue;
-		}
+		// const j = canonicPath.findIndex((p) => eq(p, exit));
+		// if (j <= i) {
+		// 	continue;
+		// }
 		const win =
 			(at(canonicGrid, exit) as number) -
 			(at(canonicGrid, entry) as number) -
