@@ -1,4 +1,4 @@
-import { parseNumbers, readLines, uniqBy } from "../util";
+import { parseNumbers, readLines, uniq, uniqBy } from "../util";
 
 const origGrid = readLines("./20/demo.txt").map((s) => s.split(""));
 const rows = origGrid.length;
@@ -125,18 +125,17 @@ const findShortcuts = (start: Coord, maxLen: number) => {
 			),
 			str
 		);
+
 		seenCells.push(...nextLayer);
 		currLayer = nextLayer;
 
-		const exits = uniqBy(
-			nextLayer.flatMap((p) =>
-				getNeighbors(grid, p, { walls: false, normal: true })
-			),
-			str
+		const exits = uniq(
+			nextLayer
+				.flatMap((p) => getNeighbors(grid, p, { walls: false, normal: true }))
+				.map(str)
 		);
 
-		for (const exit of exits) {
-			const key = str(exit);
+		for (const key of exits) {
 			if (!opt.has(key)) {
 				opt.set(key, d);
 			}
@@ -157,10 +156,7 @@ for (let i = 0; i < canonicPath.length - 1; i++) {
 		if (j <= i) {
 			continue;
 		}
-		const win =
-			(at(canonicGrid, exit) as number) -
-			(at(canonicGrid, entry) as number) -
-			d;
+		const win = j - i - d;
 		if (counts.has(win)) {
 			counts.set(win, counts.get(win)! + 1);
 		} else {
