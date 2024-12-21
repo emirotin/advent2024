@@ -105,36 +105,41 @@ const findPath = (grid: Cell[][], start: Coord) => {
 
 const { path: canonicPath, grid: canonicGrid } = findPath(getGrid(), startPos);
 
+const str = (p: Coord) => `${p.r}:${p.c}`;
+
 const findShortcuts = (start: Coord, maxLen: number) => {
 	const grid = getGrid();
 
-	const res: (readonly [Coord, number])[] = [];
+	const opt = new Map<string, number>();
+	opt.set(str(start), 0);
 
 	let currLayer = [start];
 	const seenCells = [start];
 
-	for (let d = 0; d < maxLen; d++) {
-		const nextLayer = currLayer.flatMap((p) =>
-			getNeighbors(grid, p, { walls: true, normal: true }).filter(
-				(p1) => !seenCells.some((p2) => eq(p1, p2))
-			)
+	for (let d = 2; d <= maxLen; d++) {
+		const nextLayer = uniqBy(
+			currLayer.flatMap((p) =>
+				getNeighbors(grid, p, { walls: true, normal: false }).filter(
+					(p1) => !seenCells.some((p2) => eq(p1, p2))
+				)
+			),
+			str
 		);
 		seenCells.push(...nextLayer);
+		currLayer = nextLayer;
 
-		res.push(
-			...nextLayer
-				.filter((p) => !isWall(grid, p))
-				.map((end) => [end, d + 1] as const)
+		const exits = uniqBy(
+			nextLayer.flatMap((p) =>
+				getNeighbors(grid, p, { walls: false, normal: true })
+			),
+			str
 		);
 
-		currLayer = nextLayer.filter((p) => isWall(grid, p));
-	}
-
-	const opt = new Map<string, number>();
-	for (const [end, d] of res) {
-		const key = `${end.r}:${end.c}`;
-		if (!opt.has(key) || opt.get(key)! > d) {
-			opt.set(key, d);
+		for (const exit of exits) {
+			const key = str(exit);
+			if (!opt.has(key)) {
+				opt.set(key, d);
+			}
 		}
 	}
 
@@ -148,10 +153,10 @@ const counts = new Map<number, number>();
 for (let i = 0; i < canonicPath.length - 1; i++) {
 	const entry = canonicPath[i]!;
 	for (const [exit, d] of findShortcuts(entry, 20)) {
-		// const j = canonicPath.findIndex((p) => eq(p, exit));
-		// if (j <= i) {
-		// 	continue;
-		// }
+		const j = canonicPath.findIndex((p) => eq(p, exit));
+		if (j <= i) {
+			continue;
+		}
 		const win =
 			(at(canonicGrid, exit) as number) -
 			(at(canonicGrid, entry) as number) -
