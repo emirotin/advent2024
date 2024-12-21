@@ -1,4 +1,4 @@
-import { readLines, uniqBy } from "../util";
+import { parseNumbers, readLines, uniqBy } from "../util";
 
 const origGrid = readLines("./20/demo.txt").map((s) => s.split(""));
 const rows = origGrid.length;
@@ -116,7 +116,7 @@ const findShortcuts = (start: Coord, maxLen: number) => {
 	for (let d = 0; d < maxLen; d++) {
 		const nextLayer = currLayer.flatMap((p) =>
 			getNeighbors(grid, p, { walls: true, normal: true }).filter(
-				(p1) => !seenCells.some((p) => eq(p, p1))
+				(p1) => !seenCells.some((p2) => eq(p1, p2))
 			)
 		);
 		seenCells.push(...nextLayer);
@@ -124,18 +124,27 @@ const findShortcuts = (start: Coord, maxLen: number) => {
 		res.push(
 			...nextLayer
 				.filter((p) => !isWall(grid, p))
-				.map((exit) => [exit, d + 1] as const)
+				.map((end) => [end, d + 1] as const)
 		);
 
 		currLayer = nextLayer.filter((p) => isWall(grid, p));
 	}
 
-	console.log(Math.max(...res.map(([, d]) => d)));
+	const opt = new Map<string, number>();
+	for (const [end, d] of res) {
+		const key = `${end.r}:${end.c}`;
+		if (!opt.has(key) || opt.get(key)! > d) {
+			opt.set(key, d);
+		}
+	}
 
-	return res;
+	return Array.from(opt.entries()).map(([key, d]) => {
+		const [r, c] = parseNumbers(key, ":") as [number, number];
+		return [{ r, c }, d] as const;
+	});
 };
 
-const wins = new Map<string, number>();
+const counts = new Map<number, number>();
 for (let i = 0; i < canonicPath.length - 1; i++) {
 	const entry = canonicPath[i]!;
 	for (const [exit, d] of findShortcuts(entry, 20)) {
@@ -143,34 +152,20 @@ for (let i = 0; i < canonicPath.length - 1; i++) {
 		if (j <= i) {
 			continue;
 		}
-		const key = `${entry.r}:${entry.c}:${exit.r}:${exit.c}`;
 		const win =
 			(at(canonicGrid, exit) as number) -
 			(at(canonicGrid, entry) as number) -
 			d;
-		if (!wins.has(key) || wins.get(key)! < win) {
-			wins.set(key, win);
+		if (counts.has(win)) {
+			counts.set(win, counts.get(win)! + 1);
+		} else {
+			counts.set(win, 1);
 		}
 	}
 }
 
-for (const k of wins.keys()) {
-	if (wins.get(k) === 76) {
-		console.log(k);
-	}
-}
-
-const res = new Map<number, number>();
-for (const win of wins.values()) {
-	if (!res.has(win)) {
-		res.set(win, 1);
-	} else {
-		res.set(win, res.get(win)! + 1);
-	}
-}
-
 console.log(
-	Array.from(res.entries())
-		.sort(([k1], [k2]) => k1 - k2)
-		.map(([k, v]) => `${k} => ${v}`)
+	Array.from(counts.entries())
+		.sort(([w1], [w2]) => w1 - w2)
+		.map(([w, c]) => `${w} => ${c}`)
 );
