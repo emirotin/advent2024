@@ -68,9 +68,7 @@ const getNeighbors = (
 };
 
 const findPath = (grid: Cell[][], start: Coord) => {
-	if (at(grid, start) === ".") {
-		set(grid, start, 0);
-	}
+	set(grid, start, 0);
 
 	const nextCells: Array<Coord> = [start];
 
@@ -88,11 +86,9 @@ const findPath = (grid: Cell[][], start: Coord) => {
 		}
 	}
 
-	const len = at(grid, endPos) as number;
-
 	const path = [endPos];
 	let pos = endPos;
-	let d = len;
+	let d = at(grid, endPos) as number;
 	while (!eq(pos, startPos)) {
 		pos = getNeighbors(grid, pos).find((n) => at(grid, n) === d - 1)!;
 		d -= 1;
@@ -100,16 +96,14 @@ const findPath = (grid: Cell[][], start: Coord) => {
 	}
 	path.reverse();
 
-	return { path, len, grid };
+	return path;
 };
 
-const { path: canonicPath, grid: canonicGrid } = findPath(getGrid(), startPos);
+const canonicPath = findPath(getGrid(), startPos);
 
 const str = (p: Coord) => `${p.r}:${p.c}`;
 
-const findShortcuts = (start: Coord, maxLen: number) => {
-	const grid = getGrid();
-
+const findShortcuts = (grid: Cell[][], start: Coord, maxLen: number) => {
 	const opt = new Map<string, number>();
 	opt.set(str(start), 0);
 
@@ -149,19 +143,16 @@ const findShortcuts = (start: Coord, maxLen: number) => {
 };
 
 const counts = new Map<number, number>();
+const clearGrid = getGrid();
 for (let i = 0; i < canonicPath.length - 1; i++) {
 	const entry = canonicPath[i]!;
-	for (const [exit, d] of findShortcuts(entry, 20)) {
+	for (const [exit, d] of findShortcuts(clearGrid, entry, 20)) {
 		const j = canonicPath.findIndex((p) => eq(p, exit));
 		if (j <= i) {
 			continue;
 		}
 		const win = j - i - d;
-		if (counts.has(win)) {
-			counts.set(win, counts.get(win)! + 1);
-		} else {
-			counts.set(win, 1);
-		}
+		counts.set(win, (counts.get(win) ?? 0) + 1);
 	}
 }
 
