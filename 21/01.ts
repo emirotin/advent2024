@@ -18,7 +18,9 @@ x^A
 <v>
 `);
 
-const getCoord = (s: string, pad: string[][]) => {
+type Pad = (string | null)[][];
+
+const getCoord = (s: string, pad: Pad) => {
 	const r = pad.findIndex((r) => r.includes(s));
 	if (r < 0) {
 		throw new Error(`Not found ${s} in ${pad}`);
@@ -63,7 +65,7 @@ const goRight = (p1: Coord, p2: Coord) => {
 const getPath = (
 	s1: string,
 	s2: string,
-	pad: string[][],
+	pad: Pad,
 	order: ("^" | "v" | ">" | "<")[]
 ) => {
 	const p1 = getCoord(s1, pad);
@@ -92,7 +94,7 @@ const getPath = (
 const getProgram = (
 	start: string,
 	result: string,
-	pad: string[][],
+	pad: Pad,
 	order: ("^" | "v" | ">" | "<")[]
 ) => {
 	let curr = start;
