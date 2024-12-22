@@ -1,6 +1,8 @@
-import { parseNumbers, readLines, uniq, uniqBy } from "../util";
+import { readLines } from "../util";
 
-const origGrid = readLines("./20/demo.txt").map((s) => s.split(""));
+const MAX_CHEAT = 20;
+
+const origGrid = readLines("./20/input.txt").map((s) => s.split(""));
 const rows = origGrid.length;
 const cols = origGrid[0]!.length;
 
@@ -101,63 +103,21 @@ const findPath = (grid: Cell[][], start: Coord) => {
 
 const canonicPath = findPath(getGrid(), startPos);
 
-const str = (p: Coord) => `${p.r}:${p.c}`;
-
-const findShortcuts = (grid: Cell[][], start: Coord, maxLen: number) => {
-	const opt = new Map<string, number>();
-	opt.set(str(start), 0);
-
-	let currLayer = [start];
-	const seenCells = [start];
-
-	for (let d = 2; d <= maxLen; d++) {
-		const nextLayer = uniqBy(
-			currLayer.flatMap((p) =>
-				getNeighbors(grid, p, { walls: true, normal: false }).filter(
-					(p1) => !seenCells.some((p2) => eq(p1, p2))
-				)
-			),
-			str
-		);
-
-		seenCells.push(...nextLayer);
-		currLayer = nextLayer;
-
-		const exits = uniq(
-			nextLayer
-				.flatMap((p) => getNeighbors(grid, p, { walls: false, normal: true }))
-				.map(str)
-		);
-
-		for (const key of exits) {
-			if (!opt.has(key)) {
-				opt.set(key, d);
-			}
-		}
-	}
-
-	return Array.from(opt.entries()).map(([key, d]) => {
-		const [r, c] = parseNumbers(key, ":") as [number, number];
-		return [{ r, c }, d] as const;
-	});
-};
-
-const counts = new Map<number, number>();
-const clearGrid = getGrid();
+let res = 0;
 for (let i = 0; i < canonicPath.length - 1; i++) {
-	const entry = canonicPath[i]!;
-	for (const [exit, d] of findShortcuts(clearGrid, entry, 20)) {
-		const j = canonicPath.findIndex((p) => eq(p, exit));
-		if (j <= i) {
-			continue;
-		}
+	const p1 = canonicPath[i]!;
+	for (let j = i + 1; j < canonicPath.length; j++) {
+		const p2 = canonicPath[j]!;
+
+		const d = Math.abs(p1.r - p2.r) + Math.abs(p1.c - p2.c);
+
+		if (d > MAX_CHEAT) continue;
+
 		const win = j - i - d;
-		counts.set(win, (counts.get(win) ?? 0) + 1);
+		if (win >= 100) {
+			res += 1;
+		}
 	}
 }
 
-console.log(
-	Array.from(counts.entries())
-		.sort(([w1], [w2]) => w1 - w2)
-		.map(([w, c]) => `${w} => ${c}`)
-);
+console.log(res);
