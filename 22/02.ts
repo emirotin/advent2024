@@ -17,17 +17,17 @@ const nextSecret = (secret: bigint) => {
 	return secret;
 };
 
-const input = readLines("./22/demo.txt").map(BigInt);
+const input = readLines("./22/input.txt").map(BigInt);
 
 const data = input.map((n) => {
 	const prices = [];
 	const diffs = [];
-	let p = n % 10n;
+	let p = Number(n % 10n);
 	for (let i = 0; i < 2000; i++) {
 		const n1 = nextSecret(n);
-		const p1 = n1 % 10n;
+		const p1 = Number(n1 % 10n);
 		prices.push(p1);
-		diffs.push(p1 - p);
+		diffs.push(Number(p1 - p));
 		// biome-ignore lint/style/noParameterAssign: <>
 		n = n1;
 		p = p1;
@@ -35,47 +35,15 @@ const data = input.map((n) => {
 	return { prices, diffs };
 });
 
-type Seq = readonly [bigint, bigint, bigint, bigint];
-
-const findSeq = (a: bigint[], s: Seq) => {
-	for (let i = 0; i < a.length - 4; i++) {
-		if (
-			a[i] === s[0] &&
-			a[i + 1] === s[1] &&
-			a[i + 2] === s[2] &&
-			a[i + 3] === s[3]
-		) {
-			return i + 3;
-		}
-	}
-	return null;
-};
-
-let bestResult = 0n;
-const seqs: Seq[] = [];
-for (let a = -9n; a <= 9n; a++) {
-	for (let b = -9n; b <= 9n; b++) {
-		for (let c = -9n; c <= 9n; c++) {
-			for (let d = -9n; d <= 9n; d++) {
-				seqs.push([a, b, c, d]);
-			}
-		}
+const seqAcc = new Map<string, number>();
+for (const { diffs, prices } of data) {
+	const seenSeqs = new Set<string>();
+	for (let i = 0; i < diffs.length - 4; i++) {
+		const seqStr = diffs.slice(i, i + 4).join(",");
+		if (seenSeqs.has(seqStr)) continue;
+		seqAcc.set(seqStr, (seqAcc.get(seqStr) ?? 0) + prices[i + 3]!);
+		seenSeqs.add(seqStr);
 	}
 }
 
-for (const seq of seqs) {
-	let res = 0n;
-
-	for (let i = 0; i < data.length; i++) {
-		const j = findSeq(data[i]!.diffs, seq);
-		if (j !== null) {
-			res += data[i]!.prices[j]!;
-		}
-	}
-
-	if (res > bestResult) {
-		bestResult = res;
-	}
-}
-
-console.log(bestResult);
+console.log(Math.max(...seqAcc.values()));
