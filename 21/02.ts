@@ -1,5 +1,4 @@
 import { readLines } from "../util";
-import memoize from "lodash/memoize.js";
 
 const parsePad = (s: string) =>
 	s
@@ -12,11 +11,6 @@ const PAD1 = parsePad(`
 456
 123
 x0A
-`);
-
-const PAD2 = parsePad(`
-x^A
-<v>
 `);
 
 type Pad = (string | null)[][];
@@ -34,24 +28,9 @@ const getCoord = (s: string, pad: Pad) => {
 	return { r, c };
 };
 
-const coordsPad1 = Object.fromEntries(
-	PAD1.flat()
-		.filter((x) => x !== null)
-		.map((s) => [s, getCoord(s, PAD1)])
-);
-
-const coordsPad2 = Object.fromEntries(
-	PAD2.flat()
-		.filter((x) => x !== null)
-		.map((s) => [s, getCoord(s, PAD2)])
-);
-
 type Coord = ReturnType<typeof getCoord>;
 
-const repeat = memoize(
-	(s: string, n: number) => new Array(n + 1).join(s),
-	(s: string, n: number) => `${s}@${n}`
-);
+const repeat = (s: string, n: number) => new Array(n + 1).join(s);
 
 const goUp = (p1: Coord, p2: Coord) => {
 	if (p2.r < p1.r) {
@@ -78,72 +57,30 @@ const goRight = (p1: Coord, p2: Coord) => {
 	return "";
 };
 
-const MAX_LENGTH = 50_000_000;
-
-class Strings {
-	private prevStrings: string[] = [];
-	private lastString = "";
-
-	appendString(s: string) {
-		this.lastString += s;
-		while (this.lastString.length > MAX_LENGTH) {
-			this.prevStrings.push(this.lastString.slice(0, MAX_LENGTH));
-			this.lastString = this.lastString.slice(MAX_LENGTH);
-		}
-	}
-
-	appendStrings(s: Strings) {
-		for (let i = 0; i < s.prevStrings.length; i++) {
-			this.appendString(s.prevStrings[i]!);
-		}
-		this.appendString(s.lastString);
-	}
-
-	get length() {
-		return (
-			this.prevStrings.reduce((acc, s) => acc + s.length, 0) +
-			this.lastString.length
-		);
-	}
-
-	*[Symbol.iterator]() {
-		for (let i = 0; i < this.prevStrings.length; i++) {
-			yield* this.prevStrings[i]![Symbol.iterator]();
-		}
-		yield* this.lastString[Symbol.iterator]();
-	}
-
-	toString() {
-		return this.prevStrings.join("") + this.lastString;
-	}
-}
-
 const getPath = (
 	p1: Coord,
 	p2: Coord,
 	order: readonly ("^" | "v" | ">" | "<")[]
 ) => {
-	const res = new Strings();
+	let res = "";
 	for (const dir of order) {
 		switch (dir) {
 			case "^":
-				res.appendString(goUp(p1, p2));
+				res += goUp(p1, p2);
 				break;
 			case "v":
-				res.appendString(goDown(p1, p2));
+				res += goDown(p1, p2);
 				break;
 			case ">":
-				res.appendString(goRight(p1, p2));
+				res += goRight(p1, p2);
 				break;
 			case "<":
-				res.appendString(goLeft(p1, p2));
+				res += goLeft(p1, p2);
 				break;
 		}
 	}
 
-	res.appendString("A");
-
-	return res;
+	return `${res}A`;
 };
 
 // The order optimizes travel distance across the directional pad,
@@ -185,71 +122,84 @@ const getOrder = (from: Coord, to: Coord, pad: Pad) => {
 	return [];
 };
 
-const getOrder1 = memoize(
-	(from: string, to: string) =>
-		getOrder(getCoord(from, PAD1), getCoord(to, PAD1), PAD1),
-	(from: string, to: string) => `${from}->${to}`
-);
-
-const getOrder2 = memoize(
-	(from: string, to: string) =>
-		getOrder(getCoord(from, PAD2), getCoord(to, PAD2), PAD2),
-	(from: string, to: string) => `${from}->${to}`
-);
-
-const getPath1 = memoize(
-	(from: string, to: string) => {
-		const p1 = coordsPad1[from]!;
-		const p2 = coordsPad1[to]!;
-		return getPath(p1, p2, getOrder1(from, to));
-	},
-	(from: string, to: string) => `${from}->${to}`
-);
-const getPath2 = memoize(
-	(from: string, to: string) => {
-		const p1 = coordsPad2[from]!;
-		const p2 = coordsPad2[to]!;
-		return getPath(p1, p2, getOrder2(from, to));
-	},
-	(from: string, to: string) => `${from}->${to}`
-);
-
-const paths: Record<string, string> = {};
-for (const from of Object.keys(coordsPad2)) {
-	for (const to of Object.keys(coordsPad2)) {
-		paths[`${from}${to}`] = getPath2(from, to).toString();
+const getProgram = (start: string, result: string, pad: Pad) => {
+	let curr = start;
+	let res = "";
+	for (const c of result.split("")) {
+		const p1 = getCoord(curr, pad);
+		const p2 = getCoord(c, pad);
+		res += getPath(p1, p2, getOrder(p1, p2, pad));
+		curr = c;
 	}
-}
+	return res;
+};
 
 const getProgram1 = (result: string) => {
-	let curr = "A";
-	const res = new Strings();
-	for (const c of result.split("")) {
-		res.appendStrings(getPath1(curr, c));
-		curr = c;
-	}
-	return res;
+	return getProgram("A", result, PAD1);
 };
-const getProgram2 = (result: Strings) => {
-	let curr = "A";
-	const res = new Strings();
-	for (const c of result) {
-		res.appendString(paths[`${curr}${c}`]!);
-		curr = c;
-	}
-	return res;
-};
+
+const paths = {
+	AA: "A",
+	"A^": "<A",
+	"A>": "vA",
+	Av: "<vA", // optimizing 2nd order seq
+	"A<": "v<<A",
+	"^A": ">A",
+	"^^": "A",
+	"^v": "vA",
+	"^<": "v<A",
+	"^>": "v>A", // seems to be irrelevant
+	"<A": ">>^A",
+	"<^": ">^A",
+	"<v": ">A",
+	"<>": ">>A",
+	"<<": "A",
+	vA: "^>A", // seems to be irrelevant
+	"v^": "^A",
+	"v<": "<A",
+	vv: "A",
+	"v>": ">A",
+	">A": "^A",
+	">^": "<^A", // optimizing 2nd order seq
+	"><": "<<A",
+	">v": "<A",
+	">>": "A",
+} as const;
 
 const codes = readLines("./21/input.txt");
-let res = 0;
+const INTERMEDIARY_PADS_COUNT = 25;
+let res = 0n;
+
 for (const code of codes) {
-	let p = getProgram1(code);
-	for (let i = 0; i < 25; i++) {
-		console.log(code, i, p.length);
-		p = getProgram2(p);
+	const p = `A${getProgram1(code)}`;
+
+	let digrams = new Map<string, bigint>();
+	for (let i = 0; i < p.length - 1; i++) {
+		const key = p.slice(i, i + 2);
+		digrams.set(key, (digrams.get(key) ?? 0n) + 1n);
 	}
 
-	res += p.length * Number.parseInt(code.slice(0, -1), 10);
+	const length = () =>
+		Array.from(digrams.values()).reduce((acc, x) => acc + x, 0n);
+
+	for (let i = 1; i <= INTERMEDIARY_PADS_COUNT; i++) {
+		const newDigrams = new Map<string, bigint>();
+
+		for (const [k, v] of digrams.entries()) {
+			const s = `A${paths[k as keyof typeof paths]}`;
+			const pairs = [];
+			for (let j = 0; j < s.length - 1; j++) {
+				pairs.push(s.slice(j, j + 2));
+			}
+			for (const key of pairs) {
+				newDigrams.set(key, (newDigrams.get(key) ?? 0n) + v);
+			}
+		}
+
+		digrams = newDigrams;
+	}
+
+	res += length() * BigInt(code.slice(0, -1));
 }
 
 console.log(res);
