@@ -16,7 +16,6 @@ let res = 0;
 
 for (let i = 0; i < verts.length; i++) {
 	const v1 = verts[i]!;
-	// if (!v1.startsWith("t")) continue;
 	for (let j = i + 1; j < verts.length; j++) {
 		const v2 = verts[j]!;
 		if (!adj.has(`${v1}-${v2}`)) continue;
