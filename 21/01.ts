@@ -63,13 +63,10 @@ const goRight = (p1: Coord, p2: Coord) => {
 };
 
 const getPath = (
-	s1: string,
-	s2: string,
-	pad: Pad,
-	order: ("^" | "v" | ">" | "<")[]
+	p1: Coord,
+	p2: Coord,
+	order: readonly ("^" | "v" | ">" | "<")[]
 ) => {
-	const p1 = getCoord(s1, pad);
-	const p2 = getCoord(s2, pad);
 	let res = "";
 	for (const dir of order) {
 		switch (dir) {
@@ -91,37 +88,72 @@ const getPath = (
 	return `${res}A`;
 };
 
-const getProgram = (
-	start: string,
-	result: string,
-	pad: Pad,
-	order: ("^" | "v" | ">" | "<")[]
-) => {
+// The order optimizes travel distance across the directional pad,
+// unless it's impossible to take the optimal path due to the empty space
+const getOrder = (from: Coord, to: Coord, pad: Pad) => {
+	if (from.c === to.c) {
+		if (from.r < to.r) return ["v"] as const;
+		if (from.r > to.r) return ["^"] as const;
+	}
+
+	if (from.r === to.r) {
+		if (from.c < to.c) return [">"] as const;
+		if (from.c > to.c) return ["<"] as const;
+	}
+
+	// down and right
+	if (from.r < to.r && from.c < to.c) {
+		if (pad[to.r]![from.c] === null) return [">", "v"] as const;
+		return ["v", ">"] as const;
+	}
+
+	// down and left
+	if (from.r < to.r && from.c > to.c) {
+		if (pad[from.r]![to.c] === null) return ["v", "<"] as const;
+		return ["<", "v"] as const;
+	}
+
+	// up and right
+	if (from.r > to.r && from.c < to.c) {
+		return [">", "^"] as const;
+	}
+
+	// up and left
+	if (from.r > to.r && from.c > to.c) {
+		if (pad[from.r]![to.c] === null) return ["^", "<"] as const;
+		return ["<", "^"] as const;
+	}
+
+	return [];
+};
+
+const getProgram = (start: string, result: string, pad: Pad) => {
 	let curr = start;
 	let res = "";
 	for (const c of result.split("")) {
-		res += getPath(curr, c, pad, order);
+		const p1 = getCoord(curr, pad);
+		const p2 = getCoord(c, pad);
+		res += getPath(p1, p2, getOrder(p1, p2, pad));
 		curr = c;
 	}
 	return res;
 };
+
 const getProgram1 = (result: string) => {
-	return getProgram("A", result, PAD1, ["^", ">", "v", "<"]);
+	return getProgram("A", result, PAD1);
 };
 const getProgram2 = (result: string) => {
-	return getProgram("A", result, PAD2, [">", "v", "^", "<"]);
+	return getProgram("A", result, PAD2);
 };
 
-const codes = readLines("./21/demo.txt");
+const codes = readLines("./21/input.txt");
 let res = 0;
 for (const code of codes) {
 	const p1 = getProgram1(code);
 	const p2 = getProgram2(p1);
 	const p3 = getProgram2(p2);
-	const p4 = getProgram2(p3);
 
-	console.log(code, p4.length);
-	res += p4.length * Number.parseInt(code.slice(0, -1), 10);
+	res += p3.length * Number.parseInt(code.slice(0, -1), 10);
 }
 
 console.log(res);
