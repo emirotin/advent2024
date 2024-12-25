@@ -73,6 +73,4 @@ const zValues = [...blocks.keys()]
 	.reverse()
 	.map(([, v]) => v);
 
-console.log(zValues);
-
 console.log(zValues.reduce((acc, x) => acc * 2 + Number(x), 0));
