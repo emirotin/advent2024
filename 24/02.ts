@@ -11,10 +11,11 @@ interface Block {
 	operator: "AND" | "OR" | "XOR";
 	input1: string;
 	input2: string;
-	computed: boolean | null;
 }
 
-const clearBlocks = new Map<string, Block>();
+const blocks = new Map<string, Block>();
+
+const prefix = (key: string) => (!key.match(/[xyz]\d\d/) ? `_${key}` : key);
 
 for (let i = sep + 1; i < input.length; i++) {
 	const m = input[i]!.match(/(\w+) (AND|OR|XOR) (\w+) -> (\w+)/);
@@ -22,152 +23,232 @@ for (let i = sep + 1; i < input.length; i++) {
 		throw new Error(`unclear block ${input[i]}`);
 	}
 	const b = {
-		input1: m[1]!,
-		input2: m[3]!,
+		input1: prefix(m[1]!),
+		input2: prefix(m[3]!),
 		operator: m[2]! as "AND" | "OR" | "XOR",
-		computed: null,
 	} satisfies Block;
-	clearBlocks.set(m[4]!, b);
+	blocks.set(prefix(m[4]!), b);
 }
 
-const getValue = (
-	inputs: Map<string, boolean>,
-	blocks: Map<string, Block>,
-	node: string,
-	seenNodes: string[] = []
-): null | boolean => {
-	if (seenNodes.includes(node)) {
-		return null;
-	}
+const renames = new Map<string, string>();
+const swaps: [string, string][] = [];
 
-	if (inputs.has(node)) {
-		return inputs.get(node)!;
+const renameKey = (from: string, to: string) => {
+	if (blocks.has(to)) {
+		throw new Error(`key already exists ${to}`);
 	}
-	const b = blocks.get(node);
-	if (!b) {
-		throw new Error(`unknown node ${node}`);
-	}
-	if (b.computed === null) {
-		const i1 = getValue(inputs, blocks, b.input1, [...seenNodes, node]);
-		const i2 = getValue(inputs, blocks, b.input2, [...seenNodes, node]);
+	blocks.set(to, blocks.get(from)!);
+	blocks.delete(from);
+	renames.set(from, to);
+	renames.set(to, from);
 
-		if (i1 === null || i2 === null) {
-			return null;
+	for (const b of blocks.values()) {
+		if (b.input1 === from) {
+			b.input1 = to;
 		}
-
-		switch (b.operator) {
-			case "AND":
-				b.computed = i1 && i2;
-				break;
-			case "OR":
-				b.computed = i1 || i2;
-				break;
-			case "XOR":
-				b.computed = i1 !== i2;
-				break;
+		if (b.input2 === from) {
+			b.input2 = to;
+		}
+		if (b.input1 > b.input2) {
+			const t = b.input1;
+			b.input1 = b.input2;
+			b.input2 = t;
 		}
 	}
-	return b.computed;
 };
 
-const checkBitN = (
-	originalBlocks: Map<string, Block>,
-	n: number,
-	x: boolean,
-	y: boolean
-) => {
-	const inputs = new Map<string, boolean>();
-	const blocks = new Map(
-		[...originalBlocks.entries()].map(([k, v]) => [k, { ...v }])
-	);
-	for (let i = 0; i < 45; i++) {
-		inputs.set(`x${i.toString().padStart(2, "0")}`, i === n ? x : false);
-		inputs.set(`y${i.toString().padStart(2, "0")}`, i === n ? y : false);
+const swap = (k1: string, k2: string) => {
+	if (!blocks.has(k1) || !blocks.has(k2)) {
+		throw new Error(`Unknown key ${k1} or ${k2}`);
 	}
-	return [
-		getValue(inputs, blocks, `z${(n + 1).toString().padStart(2, "0")}`),
-		getValue(inputs, blocks, `z${n.toString().padStart(2, "0")}`),
-	];
+	const t = blocks.get(k1)!;
+	blocks.set(k1, blocks.get(k2)!);
+	blocks.set(k2, t);
+
+	swaps.push([k1, k2]);
 };
 
-const validateConfig = (blocks: Map<string, Block>) => {
-	for (let n = 0; n < 45; n++) {
-		const z00 = checkBitN(blocks, n, false, false);
-		const z01 = checkBitN(blocks, n, false, true);
-		const z10 = checkBitN(blocks, n, true, false);
-		const z11 = checkBitN(blocks, n, true, true);
+swap("_btb", "_mwp");
+swap("_rmj", "z23");
+swap("_cmv", "z17");
+swap("_rdg", "z30");
 
+for (const b of blocks.values()) {
+	if (b.input1 > b.input2) {
+		const t = b.input1;
+		b.input1 = b.input2;
+		b.input2 = t;
+	}
+}
+
+const sameNum = (s1: string, s2: string) => s1.slice(1) === s2.slice(1);
+const lowerBy1 = (s1: string, s2: string) =>
+	Number.parseInt(s1.slice(1), 10) + 1 === Number.parseInt(s2.slice(1));
+
+for (const key of [...blocks.keys()]) {
+	const b = blocks.get(key)!;
+
+	if (
+		b.operator === "XOR" &&
+		b.input1.match(/x\d\d/) &&
+		b.input2.match(/y\d\d/) &&
+		b.input1 !== "x00" &&
+		b.input2 !== "y00" &&
+		sameNum(b.input1, b.input2) &&
+		key.startsWith("_")
+	) {
+		renameKey(key, b.input1.replace("x", "a"));
+	}
+
+	if (
+		b.operator === "AND" &&
+		b.input1.match(/x\d\d/) &&
+		b.input2.match(/y\d\d/) &&
+		b.input1 !== "x00" &&
+		b.input2 !== "y00" &&
+		sameNum(b.input1, b.input2) &&
+		key.startsWith("_")
+	) {
+		renameKey(key, b.input1.replace("x", "b"));
+	}
+}
+
+let changed = true;
+while (changed) {
+	changed = false;
+
+	for (const key of [...blocks.keys()]) {
+		const b = blocks.get(key)!;
 		if (
-			z00.includes(null) ||
-			z01.includes(null) ||
-			z10.includes(null) ||
-			z11.includes(null)
+			b.operator === "AND" &&
+			b.input1.match(/a\d\d/) &&
+			b.input2.match(/c\d\d/) &&
+			Number.parseInt(b.input1.slice(1), 10) ===
+				Number.parseInt(b.input2.slice(1), 10) + 1 &&
+			key.startsWith("_")
 		) {
-			return null;
-		}
-
-		if (
-			!(
-				z00[0] === false &&
-				z00[1] === false &&
-				z01[0] === false &&
-				z01[1] === true &&
-				z10[0] === false &&
-				z10[1] === true &&
-				z11[0] === true &&
-				z11[1] === false
-			)
-		) {
-			return n;
-		}
-	}
-
-	return -1;
-};
-
-const allNodes = [...clearBlocks.keys()];
-let lastFail = validateConfig(clearBlocks)!;
-const swappedNodes: string[] = [];
-let recentBlocks = clearBlocks;
-while (true) {
-	if (lastFail === -1) {
-		break;
-	}
-
-	let found = false;
-	for (let i = 0; i < allNodes.length - 1; i++) {
-		if (found) {
-			found = false;
+			renameKey(key, b.input1.replace("a", "d"));
+			changed = true;
 			break;
 		}
+	}
 
-		const k1 = allNodes[i]!;
-		if (swappedNodes.includes(k1)) continue;
+	for (const key of [...blocks.keys()]) {
+		const b = blocks.get(key)!;
+		if (
+			b.operator === "OR" &&
+			b.input1.match(/b\d\d/) &&
+			b.input2.match(/d\d\d/) &&
+			b.input1.slice(1) === b.input2.slice(1) &&
+			key.startsWith("_")
+		) {
+			renameKey(key, b.input1.replace("b", "c"));
+			changed = true;
+			break;
+		}
+	}
 
-		for (let j = i + 1; j < allNodes.length; j++) {
-			const k2 = allNodes[j]!;
-			if (swappedNodes.includes(allNodes[j]!)) continue;
-
-			const blocks = new Map(
-				[...recentBlocks.entries()].map(([k, v]) => [k, { ...v }])
+	for (const key of [...blocks.keys()]) {
+		const b = blocks.get(key)!;
+		if (
+			b.operator === "XOR" &&
+			key.match(/z\d\d/) &&
+			b.input2.match(/a\d\d/) &&
+			key.slice(1) === b.input2.slice(1) &&
+			b.input1.startsWith("_")
+		) {
+			renameKey(
+				b.input1,
+				`c${(Number.parseInt(key.slice(1)) - 1).toString().padStart(2, "0")}`
 			);
-			const t = blocks.get(k1)!;
-			blocks.set(k1, blocks.get(k2)!);
-			blocks.set(k2, t);
-
-			const newFail = validateConfig(blocks);
-			if (newFail === null) {
-				continue;
-			}
-			if (newFail > lastFail || newFail === -1) {
-				lastFail = newFail;
-				swappedNodes.push(k1, k2);
-				found = true;
-				recentBlocks = blocks;
-				break;
-			}
+			changed = true;
+			break;
 		}
 	}
 }
 
-console.log(swappedNodes.sort().join(","));
+for (const [k, b] of blocks) {
+	if (
+		k === "z00" &&
+		b.operator === "XOR" &&
+		b.input1 === "x00" &&
+		b.input2 === "y00"
+	)
+		continue;
+
+	if (
+		k === "c00" &&
+		b.operator === "AND" &&
+		b.input1 === "x00" &&
+		b.input2 === "y00"
+	)
+		continue;
+
+	if (
+		k === "z45" &&
+		b.operator === "OR" &&
+		b.input1 === "b44" &&
+		b.input2 === "d44"
+	)
+		continue;
+
+	if (
+		k.match(/a\d\d/) &&
+		b.operator === "XOR" &&
+		b.input1.match(/x\d\d/) &&
+		b.input2.match(/y\d\d/) &&
+		sameNum(k, b.input1) &&
+		sameNum(k, b.input2)
+	)
+		continue;
+
+	if (
+		k.match(/b\d\d/) &&
+		b.operator === "AND" &&
+		b.input1.match(/x\d\d/) &&
+		b.input2.match(/y\d\d/) &&
+		sameNum(k, b.input1) &&
+		sameNum(k, b.input2)
+	)
+		continue;
+
+	if (
+		k.match(/d\d\d/) &&
+		b.operator === "AND" &&
+		b.input1.match(/a\d\d/) &&
+		b.input2.match(/c\d\d/) &&
+		sameNum(k, b.input1) &&
+		lowerBy1(b.input2, k)
+	)
+		continue;
+
+	if (
+		k.match(/c\d\d/) &&
+		b.operator === "OR" &&
+		b.input1.match(/b\d\d/) &&
+		b.input2.match(/d\d\d/) &&
+		sameNum(k, b.input1) &&
+		sameNum(k, b.input2)
+	)
+		continue;
+
+	if (
+		k.match(/z\d\d/) &&
+		b.operator === "XOR" &&
+		b.input1.match(/a\d\d/) &&
+		b.input2.match(/c\d\d/) &&
+		sameNum(k, b.input1) &&
+		lowerBy1(b.input2, k)
+	)
+		continue;
+
+	console.log(`${k} = ${b.input1} ${b.operator} ${b.input2}`);
+}
+
+console.log(
+	swaps
+		.flat()
+		.map((s) => (s.startsWith("_") ? s.slice(1) : s))
+		.sort()
+		.join(",")
+);
