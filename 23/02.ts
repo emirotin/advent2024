@@ -36,6 +36,6 @@ const matrix = Array.from({ length: verts.length }, (_, i) =>
 
 fs.writeFileSync(
 	"./23/matrix.csv",
-	matrix.map((row) => row.join(", ")).join("\n")
+	matrix.map((row) => row.join(",")).join("\n")
 );
-fs.writeFileSync("./23/vert.csv", verts.join(", "));
+fs.writeFileSync("./23/vert.csv", verts.join(","));

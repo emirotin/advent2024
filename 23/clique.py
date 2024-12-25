@@ -14,12 +14,15 @@ with open(os.path.dirname(os.path.realpath(__file__)) + '/vert.csv', newline='')
         break
 
 
-def show_graph_with_labels(adjacency_matrix, labels):
-    rows, cols = np.where(adjacency_matrix == 1)
-    edges = zip(rows.tolist(), cols.tolist())
-    gr = nx.Graph()
-    gr.add_edges_from(edges)
-    nx.draw(gr, node_size=500, labels=labels, with_labels=True)
-    plt.show()
+rows, cols = np.where(matrix == 1)
+gr = nx.Graph()
+gr.add_nodes_from(vertexes)
+edges = zip(rows.tolist(), cols.tolist())
+gr.add_edges_from(edges)
 
-show_graph_with_labels(matrix, {i: vertexes[i] for i in range(len(vertexes))})
+cliques = list(nx.find_cliques(gr))
+largest_clique = max(cliques, key=len)
+
+verts = [vertexes[i] for i in largest_clique]
+verts.sort()
+print("Largest clique:", ','.join(verts))
